@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>PC 页面手机端适配</title>
+  <title>AI办公助手</title>
   <style>
     body, html {
       margin: 0;
@@ -18,10 +18,21 @@
       border: none;
       transform-origin: 0 0;
       transition: transform 0.3s ease;
+      /* 强制放大字体 */
+      -webkit-transform: scale(1.5); /* 针对 WebKit 浏览器 */
+      transform: scale(1.5); /* 默认放大1.5倍，可调整 */
     }
+    /* 媒体查询优化手机端显示 */
     @media (max-width: 768px) {
       #pcFrame {
-        transform: scale(0.5); /* 默认缩放比例，可根据需要调整 */
+        transform: scale(1); /* 取消缩放，依赖内嵌样式 */
+        height: auto;
+        min-height: 100vh;
+      }
+      /* 注入 CSS 到 iframe 内容（需 PC 页面支持） */
+      /* 以下为示例，实际需调整 */
+      #pcFrame::-webkit-scrollbar {
+        display: none; /* 隐藏滚动条 */
       }
     }
   </style>
@@ -29,19 +40,35 @@
 <body>
   <iframe id="pcFrame" src="https://14.116.240.82:1453/chat/j8n37OTjmPj4fzLrmq9w"></iframe>
   <script>
-    // 动态调整缩放比例
+    // 动态调整缩放比例并放大字体
     function adjustFrame() {
       const frame = document.getElementById('pcFrame');
       const screenWidth = window.innerWidth;
-      const targetWidth = 1920; // 假设 PC 页面设计宽度，可根据实际调整
-      const scale = screenWidth / targetWidth;
+      const targetWidth = 1920; // 假设 PC 页面设计宽度
+      let scale = screenWidth / targetWidth;
 
-      if (screenWidth <= 768) { // 手机端适配
-        frame.style.transform = `scale(${scale > 1 ? 1 : scale})`;
-        frame.style.height = `${100 / (scale > 1 ? 1 : scale)}vh`;
+      if (screenWidth <= 768) { // 手机端
+        scale = Math.min(1, scale); // 限制最大缩放为1
+        frame.style.transform = `scale(${scale * 1.5})`; // 额外放大1.5倍
+        frame.style.height = `${100 / (scale * 1.5)}vh`; // 调整高度
       } else {
         frame.style.transform = 'scale(1)';
         frame.style.height = '100vh';
+      }
+
+      // 尝试注入 CSS 到 iframe（仅限同源）
+      try {
+        const doc = frame.contentDocument || frame.contentWindow.document;
+        if (doc) {
+          const style = doc.createElement('style');
+          style.textContent = `
+            body { font-size: 16px !important; }
+            * { max-width: 100%; box-sizing: border-box; }
+          `;
+          doc.head.appendChild(style);
+        }
+      } catch (e) {
+        console.log('无法注入 CSS，可能是跨域限制:', e);
       }
     }
 
